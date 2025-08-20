@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TTRPG Character Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:1rem; background:#f4f4f4; }
+    h1 { text-align:center; }
+    .actions { display:flex; gap:0.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:1rem; }
+    section { margin-bottom:1rem; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    details summary { cursor:pointer; background:#333; color:#fff; padding:0.5rem 1rem; font-weight:bold; }
+    details[open] summary { background:#555; }
+    .content { padding:1rem; }
+    .status { text-align:center; margin:0.5rem; font-size:0.9rem; color:green; }
+    pre { white-space:pre-wrap; word-wrap:break-word; }
+  </style>
+</head>
+<body>
+  <h1>TTRPG Character Sheet</h1>
+  <div class="actions">
+    <input type="file" id="fileInput" accept=".xml" style="display:none">
+    <button onclick="byId('fileInput').click()">Load XML</button>
+    <button onclick="pasteXML()">Paste XML</button>
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+  </div>
+  <div id="status" class="status">No file loaded</div>
+
+  <section><details><summary>Character</summary><div id="character" class="content"></div></details></section>
+  <section><details><summary>Abilities</summary><div id="abilities" class="content"></div></details></section>
+  <section><details><summary>Vitality & Defenses</summary><div id="vitality" class="content"></div></details></section>
+  <section><details><summary>Attacks & Weapons</summary><div id="attacks" class="content"></div></details></section>
+  <section><details><summary>Skills</summary><div id="skills" class="content"></div></details></section>
+  <section><details><summary>Feats & Features</summary><div id="feats" class="content"></div></details></section>
+  <section><details><summary>Inventory</summary><div id="inventory" class="content"></div></details></section>
+  <section><details><summary>Notes</summary><div id="notes" class="content"></div></details></section>
+
+  <script>
+    function byId(id){return document.getElementById(id);}
+    function setStatus(msg){byId('status').textContent = msg;}
+
+    function expandAll(){
+      document.querySelectorAll('details').forEach(d => d.open = true);
+    }
+    function collapseAll(){
+      document.querySelectorAll('details').forEach(d => d.open = false);
+    }
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if(!file){return;}
+      setStatus("Loading: "+file.name+" ("+file.size+" bytes)...");
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try{
+          parseAndRender(ev.target.result);
+          setStatus("Loaded character from "+file.name);
+        }catch(err){
+          setStatus("Error: "+err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function pasteXML(){
+      const txt = prompt("Paste XML content:");
+      if(txt){ parseAndRender(txt); setStatus("Loaded character from pasted XML"); }
+    }
+
+    function parseAndRender(xmlText){
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, "text/xml");
+      if(xml.getElementsByTagName("parsererror").length){ throw new Error("Invalid XML"); }
+
+      const name = xml.querySelector("character > name")?.textContent || "Unnamed";
+      byId("character").innerHTML = "<strong>Name:</strong> "+name;
+
+      // Example parse for abilities
+      let abilities = "";
+      xml.querySelectorAll("abilities ability").forEach(a=>{
+        abilities += `<div>${a.getAttribute("name")||""}: ${a.textContent}</div>`;
+      });
+      byId("abilities").innerHTML = abilities || "(none)";
+
+      // Vitality example
+      const vit = xml.querySelector("vitality")?.textContent || "";
+      byId("vitality").innerHTML = vit || "(none)";
+
+      // Attacks example
+      let attacks = "";
+      xml.querySelectorAll("attack").forEach(atk=>{
+        attacks += `<div>${atk.getAttribute("name")||""} — ${atk.textContent}</div>`;
+      });
+      byId("attacks").innerHTML = attacks || "(none)";
+
+      // Skills
+      let skills = "";
+      xml.querySelectorAll("skills skill").forEach(s=>{
+        skills += `<div>${s.getAttribute("name")||""}: ${s.textContent}</div>`;
+      });
+      byId("skills").innerHTML = skills || "(none)";
+
+      // Feats
+      let feats = "";
+      xml.querySelectorAll("feats feat").forEach(f=>{
+        feats += `<div><strong>${f.getAttribute("name")||""}</strong><br>${f.textContent}</div>`;
+      });
+      byId("feats").innerHTML = feats || "(none)";
+
+      // Inventory
+      let inv = "";
+      xml.querySelectorAll("inventory item").forEach(i=>{
+        inv += `<div>${i.getAttribute("name")||""}: ${i.textContent}</div>`;
+      });
+      byId("inventory").innerHTML = inv || "(none)";
+
+      // Notes
+      const notes = xml.querySelector("notes")?.textContent || "";
+      byId("notes").textContent = notes || "(none)";
+    }
+  </script>
+</body>
+</html>
