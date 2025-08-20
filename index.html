@@ -369,7 +369,7 @@
 
     // Inventory
     {
-      const s = section("Inventory" + (data.credits?` • <span class='muted'>Credits: ${esc(data.credits)}</span>`:""));
+      const s = section("Inventory" + (data.credits?` • Credits: ${esc(data.credits)}));
       const hdr = E("div","rows hdr", `<div>Item</div><div>Qty</div><div>Bulk</div><div>Cost</div>`);
       s.content.appendChild(hdr);
       (data.inventory||[]).forEach(i => {
